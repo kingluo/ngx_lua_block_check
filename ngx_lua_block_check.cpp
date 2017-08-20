@@ -192,7 +192,7 @@ int lua_resume(lua_State *L, int narg) {
 
 		FILE* tfp = fp ?: stdout;
 		char ts[64];
-		sprintf(ts, "%s.%06d %d ", tmbuf, tv1.tv_usec, delta);
+		sprintf(ts, "%s.%06d %dms ", tmbuf, tv1.tv_usec, delta);
 		fwrite(ts, strlen(ts), 1, tfp);
 		fwrite(url, strlen(url), 1, tfp);
 		fwrite(" ", 1, 1, tfp);
