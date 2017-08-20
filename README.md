@@ -1,10 +1,13 @@
 # ngx_lua_block_check
 
-This tool is used to find out long run coroutine resume (via `lua_resume()`),
-which means CPU intensive computations and/or blocking on system calls, e.g. disk read/write, os.execute().
+This tool is used to find out long running coroutine resume,
+which means CPU intensive computations and/or blocking on system calls (e.g. disk read/write, os.execute).
 
-Nginx worker process should be purely consist of non-blocking tasks. All cosocket based lib is non-blcking.
-Long blocking calls would cause many issues, e.g. cosocket timeout.
+Long resume would cause many issues, e.g. cosocket timeout.
+
+**Just like systemtap, this tool do not touch openresty source codes, and it is NOT nginx module too!**
+
+**It just hooks `lua_resume()` via LD_PRELOAD to do the check.**
 
 ## Why not systemtap?
 
