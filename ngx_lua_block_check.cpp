@@ -36,8 +36,8 @@ typedef int (*lua_resume_t)(lua_State *L, int narg);
 typedef int (*lua_getstack_t) (lua_State *L, int level, lua_Debug *ar);
 typedef int (*lua_getinfo_t) (lua_State *L, const char *what, lua_Debug *ar);
 typedef int (*lua_gettop_t) (lua_State *L);
+#define LUA_TFUNCTION 6
 typedef int (*lua_type_t) (lua_State *L, int index);
-typedef void (*lua_call_t) (lua_State *L, int nargs, int nresults);
 typedef const char * (*lua_tostring_t) (lua_State *L, int index, size_t* len);
 typedef void  (*lua_pushvalue_t) (lua_State *L, int index);
 typedef void (*lua_settop_t)(lua_State *L, int idx);
@@ -48,7 +48,6 @@ static lua_getstack_t lua_getstack_f = NULL;
 static lua_getinfo_t lua_getinfo_f = NULL;
 static lua_gettop_t lua_gettop_f = NULL;
 static lua_type_t lua_type_f = NULL;
-static lua_call_t lua_call_f = NULL;
 static lua_tostring_t lua_tostring_f = NULL;
 static lua_pushvalue_t lua_pushvalue_f = NULL;
 static lua_settop_t lua_settop_f = NULL;
@@ -59,23 +58,19 @@ static int* ngx_pid_ptr = NULL;
 static const char* getFuncInfo(lua_State* L) {
 	const static size_t buflen = 512;
 	static char buf[buflen];
+	lua_Debug info;
 
-	if (lua_gettop_f(L) > 0) {
-		if (lua_type_f(L, 1) == 6) {
-			lua_pushvalue_f(L, 1);
-			lua_Debug info;
-			lua_getinfo_f(L, ">nSl", &info);
-			snprintf(buf, buflen, "%s,%s,%d",
-				info.name, info.source, info.currentline ?: info.linedefined);
-			return buf;
-		}
+	if (lua_gettop_f(L) > 0 && lua_type_f(L, 1) == LUA_TFUNCTION) {
+		lua_pushvalue_f(L, 1);
+		lua_getinfo_f(L, ">nSl", &info);
+	} else {
+		lua_getstack_f(L, 1, &info);
+		lua_getinfo_f(L, "nSl", &info);
 	}
 
-	lua_Debug info;
-	lua_getstack_f(L, 1, &info);
-	lua_getinfo_f(L, "nSl", &info);
 	snprintf(buf, buflen, "%s,%s,%d",
-			info.name, info.short_src, info.currentline ?: info.linedefined);
+			info.name, info.short_src,
+			(info.currentline > 0) ? info.currentline : info.linedefined);
 	return buf;
 }
 
@@ -86,7 +81,6 @@ static void initfunc() {
 		lua_getinfo_f = (lua_getinfo_t)dlsym(RTLD_NEXT, "lua_getinfo");
 		lua_gettop_f = (lua_gettop_t)dlsym(RTLD_NEXT, "lua_gettop");
 		lua_type_f = (lua_type_t)dlsym(RTLD_NEXT, "lua_type");
-		lua_call_f = (lua_call_t)dlsym(RTLD_NEXT, "lua_call");
 		lua_tostring_f = (lua_tostring_t)dlsym(RTLD_NEXT, "lua_tolstring");
 		lua_pushvalue_f = (lua_pushvalue_t)dlsym(RTLD_NEXT, "lua_pushvalue");
 		lua_settop_f = (lua_settop_t)dlsym(RTLD_NEXT, "lua_settop");
