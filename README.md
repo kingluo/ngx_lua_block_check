@@ -48,12 +48,11 @@ tail -f /tmp/ngx_lua_block_check.log*
 ```
 
 ```
-==> /tmp/ngx_lua_block_check.log.52349 <==
-2017-08-20 20:13:02.894690 11ms /test (null),=content_by_lua(nginx.conf:56),-1 test,/usr/local/openresty/lualib/test.lua,7 yield
-2017-08-20 20:13:10.013846 10ms /test (null),=content_by_lua(nginx.conf:56),-1 test,/usr/local/openresty/lualib/test.lua,7 yield
+==> /tmp/ngx_lua_block_check.log.2282 <==
+2017-08-20 23:56:44.424166 30ms /test (null),content_by_lua(nginx.conf:56),1 test,/usr/local/openresty/lualib/test.lua,7 yield
 
-==> /tmp/ngx_lua_block_check.log.52353 <==
-2017-08-20 20:13:15.990393 11ms /test (null),=content_by_lua(nginx.conf:56),-1 test,/usr/local/openresty/lualib/test.lua,7 yield
+==> /tmp/ngx_lua_block_check.log.2287 <==
+2017-08-20 23:56:54.556875 10ms /test (null),content_by_lua(nginx.conf:56),1 test,/usr/local/openresty/lualib/test.lua,7 yield
 ```
 
 The log files are suffix by worker process pid.
