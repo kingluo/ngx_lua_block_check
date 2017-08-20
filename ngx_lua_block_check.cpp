@@ -4,7 +4,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <string.h>
 
 extern "C" {
@@ -55,6 +54,8 @@ static lua_pushvalue_t lua_pushvalue_f = NULL;
 static lua_settop_t lua_settop_f = NULL;
 static lua_getfield_t lua_getfield_f = NULL;
 
+static int* ngx_pid_ptr = NULL;
+
 static const char* getFuncInfo(lua_State* L) {
 	const static size_t buflen = 512;
 	static char buf[buflen];
@@ -90,46 +91,23 @@ static void initfunc() {
 		lua_pushvalue_f = (lua_pushvalue_t)dlsym(RTLD_NEXT, "lua_pushvalue");
 		lua_settop_f = (lua_settop_t)dlsym(RTLD_NEXT, "lua_settop");
 		lua_getfield_f = (lua_getfield_t)dlsym(RTLD_NEXT, "lua_getfield");
+		ngx_pid_ptr = (int*)dlsym(RTLD_DEFAULT, "ngx_pid");
 	}
 }
 
 int lua_resume(lua_State *L, int narg) {
 	initfunc();
 
-	static bool enabled = true;
-
-	if (!enabled) {
-		return lua_resume_f(L, narg);
-	}
-
-	// skip init phase, keep static variables untouched in master process
-	{
-		char buf[32];
-		lua_getfield_f(L, LUA_GLOBALSINDEX, "ngx");
-		lua_getfield_f(L, -1, "get_phase");
-		lua_call_f(L, 0, 1);
-		size_t len;
-		const char* str = lua_tostring_f(L, -1, &len);
-		len = (len > 31) ? 31 : len;
-		strncpy(buf, str, len);
-		buf[len] = 0;
-		lua_settop_f(L, -(2)-1);
-		if (strcmp(buf, "init") == 0) {
-			return lua_resume_f(L, narg);
-		}
-	}
-
 	// read configs from nginx.conf once
-	static bool initCfg = false;
+	static bool configured = false;
+	static bool enabled = true;
 	static int NGX_LUA_BLOCK_CHECK_MIN_MS = 10;
 	static FILE* fp = NULL;
 	static char* fpath = NULL;
-	if (!initCfg) {
+	static int ngx_pid = -1;
+	if (!configured) {
 		char* tmp = getenv("NGX_LUA_BLOCK_CHECK");
 		enabled = (tmp && strcmp(tmp, "true") == 0);
-		if (!enabled) {
-			return lua_resume_f(L, narg);
-		}
 
 		char* threshold = getenv("NGX_LUA_BLOCK_CHECK_MIN_MS");
 		if (threshold) {
@@ -138,15 +116,13 @@ int lua_resume(lua_State *L, int narg) {
 
 		fpath = getenv("NGX_LUA_BLOCK_CHECK_OUTPUT_FILE");
 
-		initCfg = true;
+		ngx_pid = *ngx_pid_ptr;
+
+		configured = true;
 	}
 
-	// avoid reentrent, we just care about the top level invocation
-	static bool invoking = false;
-	if (invoking) {
+	if (!enabled) {
 		return lua_resume_f(L, narg);
-	} else {
-		invoking = true;
 	}
 
 	timeval tv1;
@@ -185,8 +161,7 @@ int lua_resume(lua_State *L, int narg) {
 
 		if (!fp && fpath) {
 			char tmp[64];
-			pid_t pid = getpid();
-			sprintf(tmp, "%s.%d", fpath, pid);
+			sprintf(tmp, "%s.%d", fpath, ngx_pid);
 			fp = fopen(tmp, "w");
 		}
 
@@ -208,8 +183,6 @@ int lua_resume(lua_State *L, int narg) {
 		fwrite("\n", 1, 1, tfp);
 		fflush(tfp);
 	}
-
-	invoking = false;
 
 	return ret;
 }
