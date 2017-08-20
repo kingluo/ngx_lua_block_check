@@ -29,7 +29,7 @@ env NGX_LUA_BLOCK_CHECK=true;
 # log threshold, in ms
 env NGX_LUA_BLOCK_CHECK_MIN_MS=10;
 # log file prefix
-env NGX_LUA_BLOCK_CHECK_OUTPUT_FILE=/tmp/ngx_lua_block_check.txt;
+env NGX_LUA_BLOCK_CHECK_OUTPUT_FILE=/tmp/ngx_lua_block_check.log;
 ```
 
 if you change configs, you could reload the nginx to take effect.
