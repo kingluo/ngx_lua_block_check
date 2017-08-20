@@ -14,7 +14,8 @@ Long blocking calls would cause many issues, e.g. cosocket timeout.
 ## Compile
 
 ```
-g++ -fPIC -shared -o ngx_lua_block_check.so ngx_lua_block_check.cpp -ldl
+# build ngx_lua_block_check.so
+make
 ```
 
 ## Configure nginx.conf
