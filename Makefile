@@ -1,2 +1,2 @@
-ngx_lua_block_check:
-	g++ -fPIC -shared -o ngx_lua_block_check.so ngx_lua_block_check.cpp -ldl
+ngx_lua_block_check.so: ngx_lua_block_check.cpp
+	g++ -O2 -fPIC -shared -o $@ $< -ldl
