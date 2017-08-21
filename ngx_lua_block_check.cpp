@@ -169,11 +169,9 @@ int lua_resume(lua_State *L, int narg) {
 		fwrite(" ", 1, 1, tfp);
 		const char* funcInfo2 = getFuncInfo(L);
 		fwrite(funcInfo2, strlen(funcInfo2), 1, tfp);
-		const char* status = (ret >= 0 && ret < sizeof(THREAD_STATUS_STR)) ? THREAD_STATUS_STR[ret] : NULL;
-		if (status) {
-			fwrite(" ", 1, 1, tfp);
-			fwrite(status, strlen(status), 1, tfp);
-		}
+		const char* status = (ret >= 0 && ret < sizeof(THREAD_STATUS_STR)) ? THREAD_STATUS_STR[ret] : "unknown";
+		fwrite(" ", 1, 1, tfp);
+		fwrite(status, strlen(status), 1, tfp);
 		fwrite("\n", 1, 1, tfp);
 		fflush(tfp);
 	}
